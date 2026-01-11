@@ -1,0 +1,5 @@
+{
+  "name": "Grandmaster Chess",
+  "description": "A premium React Chess application featuring Single Player (vs AI) and Two Player modes, complete with professional timers, difficulty levels, and undo functionality.",
+  "requestFramePermissions": []
+}
