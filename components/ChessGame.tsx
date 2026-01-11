@@ -27,7 +27,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
   const [showPromotion, setShowPromotion] = useState(false);
   const [promotionMove, setPromotionMove] = useState<{ from: string, to: string } | null>(null);
 
-  // Timers
+
+
+  // Scores
+  const [scores, setScores] = useState<{ w: number, b: number }>({ w: 0, b: 0 });
   const [timers, setTimers] = useState<{ [key in PlayerColor]: number }>({
     [PlayerColor.WHITE]: settings.timeControl * 60,
     [PlayerColor.BLACK]: settings.timeControl * 60,
@@ -41,7 +44,27 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
     const game = gameRef.current;
     setFen(game.fen());
     setMoveHistory(game.history());
+
     setInCheck(game.inCheck());
+
+    // Calculate Scores
+    const board = game.board();
+    let whiteMaterial = 0;
+    let blackMaterial = 0;
+    const pieceValues: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+    const maxScore = 39;
+
+    board.forEach(row => {
+      row.forEach(piece => {
+        if (piece) {
+          const val = pieceValues[piece.type] || 0;
+          if (piece.color === 'w') whiteMaterial += val;
+          else blackMaterial += val;
+        }
+      });
+    });
+    // Score displayed is what you have CAPTURED (lost by opponent)
+    setScores({ w: maxScore - blackMaterial, b: maxScore - whiteMaterial });
 
     if (game.isGameOver()) {
       setGameOver(true);
@@ -73,11 +96,14 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
       if (!moveResult) return false;
 
       // If valid, execute on real game
-      game.move(moveDetails);
-      updateGameState();
-      setMoveFrom(null);
-      setOptionSquares({});
-      return true;
+      const result = game.move(moveDetails);
+      if (result) {
+        updateGameState();
+        setMoveFrom(null);
+        setOptionSquares({});
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
@@ -115,8 +141,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
     setOptionSquares(newSquares);
   };
 
-  const handleSquareClick = (args: any) => {
-    const square = args.square as Square;
+  const handleSquareClick = (square: Square) => {
+    // console.log("Square Clicked:", square);
     if (!isPlayerTurn()) {
       return;
     }
@@ -162,8 +188,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
     setOptionSquares({});
   };
 
-  const onPieceDrop = (args: any) => {
-    const { sourceSquare, targetSquare, piece } = args;
+  const onPieceDrop = (sourceSquare: string, targetSquare: string, piece: string) => {
+    // console.log("Piece Drop:", sourceSquare, targetSquare);
     if (!isPlayerTurn()) {
       return false;
     }
@@ -194,6 +220,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
   };
 
   // --- AI Loop ---
+  useEffect(() => {
+    updateGameState();
+  }, [updateGameState]);
+
   useEffect(() => {
     if (settings.mode === GameMode.PVC && gameRef.current.turn() === 'b' && !gameOver) {
       const timer = setTimeout(() => {
@@ -260,6 +290,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
     });
   };
 
+
+
   return (
     <div className="flex flex-col lg:flex-row h-full w-full gap-6 p-4 max-w-7xl mx-auto items-center lg:items-start justify-center relative">
 
@@ -267,7 +299,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
       {showPromotion && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm rounded-xl">
           <div className="bg-slate-800 p-8 rounded-xl border border-slate-600 shadow-2xl">
-            <h3 className="text-xl text-white font-bold mb-6 text-center">Choose Promotion Piece</h3>
+            <h3 className="text-xl text-white font-bold mb-6 text-center">Chọn Quân Phong Cấp</h3>
             <div className="flex gap-4">
               {[
                 { id: 'q', label: 'Queen', char: '♕' },
@@ -295,10 +327,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
             {gameOver
               ? "Kết Thúc"
               : (settings.mode === GameMode.PVC && gameRef.current.turn() === 'b')
-                ? "ba Pháp đang suy nghĩ..."
-                : (gameRef.current.turn() === 'w'
-                  ? "Lượt Hạo Nhiên"
-                  : (settings.mode === GameMode.PVC ? "Lượt ba Pháp" : "Lượt An Nhiên"))
+                ? "Ba Pháp đang nghĩ..."
+                : (gameRef.current.turn() === 'w' ? "Lượt Hạo Nhiên (Trắng)" : (settings.mode === GameMode.PVC ? "Lượt Ba Pháp (Đen)" : "Lượt An Nhiên (Đen)"))
             }
           </span>
         </div>
@@ -306,30 +336,28 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
         {/* Board */}
         <div className={`relative rounded-lg shadow-2xl border-[8px] transition-colors ${inCheck ? 'border-red-500' : 'border-slate-700'}`}>
           {inCheck && !gameOver && (
-            <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-xl animate-bounce whitespace-nowrap z-10">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-600/90 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-black text-2xl shadow-2xl animate-bounce whitespace-nowrap z-50 border-4 border-red-400">
               CHIẾU TƯỚNG!
             </div>
           )}
 
           <div className="w-[85vw] h-[85vw] max-w-[600px] max-h-[600px]">
             <Chessboard
-              options={{
-                position: fen,
-                onPieceDrop: onPieceDrop,
-                onSquareClick: handleSquareClick,
-                draggable: true,
-                squareStyles: optionSquares,
-                animationDuration: 200,
-                boardOrientation: 'white',
-                customDarkSquareStyle: { backgroundColor: '#334155' },
-                customLightSquareStyle: { backgroundColor: '#94a3b8' },
-              }}
+              position={fen}
+              onPieceDrop={onPieceDrop}
+              onSquareClick={handleSquareClick}
+              arePiecesDraggable={true}
+              customSquareStyles={optionSquares}
+              animationDuration={200}
+              boardOrientation='white'
+              customDarkSquareStyle={{ backgroundColor: '#334155' }}
+              customLightSquareStyle={{ backgroundColor: '#94a3b8' }}
             />
           </div>
         </div>
 
         <p className="text-slate-500 text-xs mt-2">
-          Chọn quân cờ để xem các nước có thể đi. Nhấp vào ô để di chuyển.
+          Chọn quân cờ để xem nước đi. Click vào ô có chấm tròn để di chuyển.
         </p>
       </div>
 
@@ -340,6 +368,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ settings, onExit }) => {
           timers={timers}
           activePlayer={gameRef.current.turn() === 'w' ? PlayerColor.WHITE : PlayerColor.BLACK}
           moveHistory={moveHistory}
+          scores={scores}
           onUndo={handleUndo}
           onReset={handleReset}
           onExit={onExit}

@@ -5,9 +5,9 @@ export enum GameMode {
 }
 
 export enum Difficulty {
-  EASY = 'Dễ',
-  MEDIUM = 'Trung Bình',
-  HARD = 'Khó'
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD'
 }
 
 export enum PlayerColor {
