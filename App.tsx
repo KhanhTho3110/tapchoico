@@ -47,10 +47,10 @@ const App: React.FC = () => {
       <div className="z-10 max-w-md w-full bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl">
 
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent mb-2">
-            Cờ Vua Pro
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent mb-2">
+            Cờ vua với ba Pháp
           </h1>
-          <p className="text-slate-400">Phiên bản Đại Kiện Tướng</p>
+          <p className="text-slate-400">Phiên bản tập chơi cờ với 3 chế độ</p>
         </div>
 
         <div className="space-y-8">
@@ -59,7 +59,7 @@ const App: React.FC = () => {
           <div className="space-y-3">
             <label className="text-sm uppercase tracking-wider font-bold text-slate-500">Thời Gian (Phút)</label>
             <div className="flex gap-2">
-              {[5, 10, 30].map((t) => (
+              {[10, 20, 30, 60, 90].map((t) => (
                 <button
                   key={t}
                   onClick={() => handleTimeChange(t)}
